@@ -1,0 +1,16 @@
+{
+  "name": "arduino-fourier-analyzer",
+  "version": "1.0.0",
+  "description": "Aplicación de análisis de series de Fourier y frecuencia dominante para datos de oscilaciones en Arduino",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "arduino",
+    "fourier",
+    "oscilaciones",
+    "resonancia",
+    "fisica"
+  ],
+  "license": "MIT"
+}
