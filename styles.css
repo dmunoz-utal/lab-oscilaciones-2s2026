@@ -561,6 +561,37 @@ body {
   flex-wrap: wrap;
 }
 
+.normalize-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(11, 15, 25, 0.75);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.22rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+  line-height: 1.2;
+}
+
+.normalize-toggle:hover {
+  border-color: var(--accent-blue);
+  color: var(--text-primary);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.normalize-toggle input[type="checkbox"] {
+  accent-color: var(--accent-blue);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  margin: 0;
+}
+
 .zoom-btn-group {
   display: inline-flex;
   align-items: center;

@@ -233,13 +233,17 @@
         <div class="card-header-flex">
           <div>
             <h2 class="card-title">Curva de Posición Calculada $x(t)$ vs. Serie de Fourier</h2>
-            <p class="chart-subtitle">Posición $x(t)$ obtenida a partir de la aceleración (azul) y Serie de Fourier ajustada encima (naranja)</p>
+            <p class="chart-subtitle" id="timePlotSubtitle">Posición $x(t)$ obtenida a partir de la aceleración (azul) y Serie de Fourier ajustada encima (naranja)</p>
           </div>
           <div class="chart-header-actions">
             <div class="legend-pills">
               <span class="pill pill-data"><i class="dot dot-data"></i> Posición $x(t)$</span>
               <span class="pill pill-fit"><i class="dot dot-fit"></i> Serie de Fourier</span>
             </div>
+            <label class="normalize-toggle" title="Normalizar amplitudes al rango [-1, 1] dividiendo por el pico máximo">
+              <input type="checkbox" id="normalizePosCheck" checked />
+              <span>Normalizar $[-1, 1]$</span>
+            </label>
             <div class="zoom-btn-group">
               <span class="zoom-label">Zoom:</span>
               <button type="button" class="btn-zoom" onclick="zoomPlot('timePlot', 0.75)" title="Acercar (Zoom In)">
