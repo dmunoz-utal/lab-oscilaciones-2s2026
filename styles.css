@@ -515,11 +515,15 @@ body {
 /* Plots */
 .plot-container {
   width: 100%;
-  height: 390px;
+  height: 370px;
+}
+
+.plot-accel {
+  height: 250px;
 }
 
 .plot-spectrum {
-  height: 290px;
+  height: 270px;
 }
 
 .legend-pills {

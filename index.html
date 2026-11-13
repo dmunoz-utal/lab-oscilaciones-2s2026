@@ -26,14 +26,14 @@
         </div>
         <div>
           <h1>Laboratorio de Oscilaciones &amp; Fourier</h1>
-          <p class="subtitle">Análisis armónico de datos experimentales de Arduino $x(t)$</p>
+          <p class="subtitle">Cálculo de posición $x(t)$ desde aceleración $a(t)$ de Arduino + Serie de Fourier</p>
         </div>
       </div>
       <div class="topbar-actions">
-        <button id="btnSampleResonance" class="btn btn-secondary" title="Cargar simulación de oscilación con armónicos">
-          Cargar Ejemplo (Arduino .txt)
+        <button id="btnSampleResonance" class="btn btn-secondary" title="Cargar los datos reales del experimento de Arduino (CoolTerm)">
+          Cargar Datos Reales (CoolTerm .txt)
         </button>
-        <button id="btnDownloadSample" class="btn btn-outline" title="Descargar un archivo .txt de ejemplo para probar">
+        <button id="btnDownloadSample" class="btn btn-outline" title="Descargar el archivo .txt de ejemplo con formato CoolTerm">
           Descargar .txt de prueba
         </button>
       </div>
@@ -44,9 +44,9 @@
     <!-- Panel Izquierdo: Controles y Carga de Archivo -->
     <section class="panel controls-panel">
       <div class="card">
-        <h2 class="card-title">1. Carga de Datos (.txt / .csv)</h2>
+        <h2 class="card-title">1. Carga de Datos de Arduino (.txt)</h2>
         <p class="help-text">
-          Sube el archivo <code>.txt</code> generado por el Monitor Serial o tarjeta SD de Arduino con dos columnas: <strong>Tiempo ($t$)</strong> y <strong>Posición ($x$)</strong> separadas por coma, espacio o tabulación.
+          Compatible con archivos de <strong>CoolTerm</strong> (ignora encabezados `Port = COM3...` y separa formatos unidos como <code>0.052.1.6082</code> $\rightarrow t=0.052, a=1.6082$) o archivos de dos columnas separadas por coma, espacio o tabulación.
         </p>
 
         <div id="dropZone" class="drop-zone">
@@ -64,6 +64,25 @@
 
         <div class="form-row">
           <div class="form-group">
+            <label for="inputSignalTypeSelect">Variable medida en el archivo</label>
+            <select id="inputSignalTypeSelect" class="input-select">
+              <option value="acceleration" selected>Tiempo y Aceleración a(t) → Calcular Posición x(t)</option>
+              <option value="position">Tiempo y Posición x(t) directamente</option>
+            </select>
+          </div>
+
+          <div id="integrationMethodGroup" class="form-group">
+            <label for="integrationMethodSelect">Método para obtener Posición $x(t)$ desde $a(t)$</label>
+            <select id="integrationMethodSelect" class="input-select">
+              <option value="trapezoidal_detrend" selected>Doble integración numérica trapezoidal (sin deriva DC/lineal)</option>
+              <option value="harmonic">Integración espectral de oscilación ($x_n = -a_n / \omega_n^2$)</option>
+            </select>
+            <p class="small-note">
+              Se elimina primero la gravedad/offset medio $\bar{a}$, se integra $v(t) = \int a(t)\,dt$, se centra la velocidad media y se integra $x(t) = \int v(t)\,dt$ eliminando la deriva cuadrática del acelerómetro.
+            </p>
+          </div>
+
+          <div class="form-group">
             <label for="timeUnitSelect">Unidad de tiempo del Arduino</label>
             <select id="timeUnitSelect" class="input-select">
               <option value="auto" selected>Autodetectar (s o ms)</option>
@@ -72,25 +91,18 @@
               <option value="us">Microsegundos (µs → convertir a s)</option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="detrendCheck">Preprocesamiento</label>
-            <label class="checkbox-label">
-              <input type="checkbox" id="detrendCheck" />
-              <span>Centrar en cero (restar $a_0/2$)</span>
-            </label>
-          </div>
         </div>
       </div>
 
       <!-- Configuración del Ajuste de Serie de Fourier -->
       <div class="card">
         <div class="card-header-flex">
-          <h2 class="card-title">2. Ajuste de Serie de Fourier</h2>
+          <h2 class="card-title">2. Ajuste de Serie de Fourier a $x(t)$</h2>
           <span id="fitModeBadge" class="badge badge-accent">Óptimo Automático</span>
         </div>
 
         <div class="formula-box" id="fourierFormulaBox">
-          x_{\text{ajuste}}(t) = \frac{a_0}{2} + \sum_{n \in \mathcal{N}} \left[ a_n \cos(n\omega_0 t) + b_n \sin(n\omega_0 t) \right]
+          x_{\text{Fourier}}(t) = \frac{a_0}{2} + \sum_{n \in \mathcal{N}} \left[ a_n \cos(n\omega_0 t) + b_n \sin(n\omega_0 t) \right]
         </div>
 
         <div class="form-group">
@@ -105,21 +117,21 @@
         <div id="autoControls" class="control-subpanel">
           <div class="slider-header">
             <label for="r2TargetSlider">Umbral de Energía / $R^2$ objetivo</label>
-            <span id="r2TargetValue" class="mono-val">99.0%</span>
+            <span id="r2TargetValue" class="mono-val">95.0%</span>
           </div>
-          <input type="range" id="r2TargetSlider" min="85" max="99.9" step="0.1" value="99.0" class="slider" />
+          <input type="range" id="r2TargetSlider" min="70" max="99.9" step="0.5" value="95.0" class="slider" />
           <p class="small-note">
-            Selecciona automáticamente los armónicos $n$ de mayor amplitud hasta explicar el porcentaje de varianza indicado o alcanzar convergencia óptima (criterio BIC/energía).
+            Selecciona automáticamente los armónicos $n$ de mayor amplitud en $x(t)$ hasta explicar el porcentaje de varianza indicado.
           </p>
         </div>
 
         <!-- Controles Modo Manual -->
         <div id="manualControls" class="control-subpanel hidden">
           <div class="slider-header">
-            <label for="maxHarmonicsSlider">Cantidad de armónicos ($K$ términos más relevantes o $n=1\dots N$)</label>
-            <span id="maxHarmonicsValue" class="mono-val">5</span>
+            <label for="maxHarmonicsSlider">Cantidad de armónicos ($N$ términos)</label>
+            <span id="maxHarmonicsValue" class="mono-val">6</span>
           </div>
-          <input type="range" id="maxHarmonicsSlider" min="1" max="40" step="1" value="5" class="slider" />
+          <input type="range" id="maxHarmonicsSlider" min="1" max="50" step="1" value="6" class="slider" />
           <div class="checkbox-row">
             <label class="checkbox-label">
               <input type="checkbox" id="consecutiveNCheck" />
@@ -133,11 +145,11 @@
             <label for="f0ModeSelect">Frecuencia base $\omega_0 = 2\pi f_0$ de la serie</label>
           </div>
           <select id="f0ModeSelect" class="input-select">
-            <option value="fundamental" selected>Frecuencia fundamental de la oscilación ($f_0 = f_{\text{dom}}$)</option>
-            <option value="window">Ventana completa de medición ($T = t_{\max} - t_{\min}$)</option>
+            <option value="window" selected>Ventana completa del experimento ($f_0 = 1/T$, serie completa)</option>
+            <option value="fundamental">Frecuencia dominante de oscilación ($f_0 = f_{\text{max}}$, sobretonos)</option>
           </select>
           <p class="small-note" id="f0Explanation">
-            Con $f_0 = f_{\text{dom}}$, $n=1$ corresponde a la frecuencia principal de oscilación y $n=2,3,\dots$ a sus sobretonos/armónicos físicos.
+            Con $f_0 = 1/T$, la Serie de Fourier representa toda la evolución temporal $x(t)$ con sus armónicos $n$ sobre el intervalo medido.
           </p>
         </div>
       </div>
@@ -149,7 +161,7 @@
           <h2>Frecuencia de Mayor Amplitud</h2>
         </div>
         <p class="help-text">
-          Frecuencia experimental dominante para comparar directamente con la frecuencia de resonancia teórica ($f_R$) del sistema:
+          Frecuencia experimental donde la oscilación alcanza su mayor amplitud para comparar con la frecuencia de resonancia teórica ($f_R$):
         </p>
 
         <div class="dominant-metrics">
@@ -171,16 +183,20 @@
 
         <div class="secondary-metrics">
           <div class="sec-metric">
-            <span>Amplitud Máxima ($C_{\text{max}}$):</span>
+            <span>Amplitud Máxima en $x(t)$ ($C_{\text{max}}$):</span>
             <strong id="domAmpVal" class="mono-val">—</strong>
           </div>
           <div class="sec-metric">
-            <span>Período Dominante ($T_{\text{dom}}$):</span>
+            <span>Período de Oscilación ($T_{\text{dom}}$):</span>
             <strong id="domPeriodVal" class="mono-val">—</strong>
           </div>
           <div class="sec-metric">
-            <span>Armónico en la serie ($n$):</span>
+            <span>Armónico de Mayor Amplitud ($n$):</span>
             <strong id="domHarmonicN" class="mono-val">—</strong>
+          </div>
+          <div class="sec-metric">
+            <span>Pico en Aceleración Original $a(t)$:</span>
+            <strong id="domAccelFreq" class="mono-val">—</strong>
           </div>
         </div>
       </div>
@@ -191,40 +207,51 @@
       <!-- Barra de Resumen de Ajuste -->
       <div class="stats-bar">
         <div class="stat-item">
-          <span class="stat-label">Puntos leídos ($M$)</span>
+          <span class="stat-label">Muestras leídas ($M$)</span>
           <span id="statPoints" class="stat-val">—</span>
         </div>
         <div class="stat-item">
-          <span class="stat-label">Frecuencia de muestreo ($f_s$)</span>
+          <span class="stat-label">Frecuencia muestreo ($f_s$)</span>
           <span id="statFs" class="stat-val">—</span>
         </div>
         <div class="stat-item">
-          <span class="stat-label">Valor Medio ($a_0 / 2$)</span>
-          <span id="statA0" class="stat-val">—</span>
+          <span class="stat-label">Aceleración Media ($\bar{a}$)</span>
+          <span id="statMeanAccel" class="stat-val">—</span>
         </div>
         <div class="stat-item">
           <span class="stat-label">Bondad de ajuste ($R^2$)</span>
           <span id="statR2" class="stat-val accent-text">—</span>
         </div>
         <div class="stat-item">
-          <span class="stat-label">Error RMSE</span>
-          <span id="statRMSE" class="stat-val">—</span>
+          <span class="stat-label">Armónicos usados</span>
+          <span id="statUsedCount" class="stat-val">—</span>
         </div>
       </div>
 
-      <!-- Gráfica Principal x(t) y Serie de Fourier -->
+      <!-- Gráfica Principal x(t) calculada y Serie de Fourier -->
       <div class="card chart-card">
         <div class="card-header-flex">
           <div>
-            <h2 class="card-title">Curva Experimental $x(t)$ vs. Serie de Fourier</h2>
-            <p class="chart-subtitle">Datos originales de Arduino (azul) y superposición de la serie de Fourier ajustada (naranja/rojo)</p>
+            <h2 class="card-title">Curva de Posición Calculada $x(t)$ vs. Serie de Fourier</h2>
+            <p class="chart-subtitle">Posición $x(t)$ obtenida a partir de la aceleración (azul) y Serie de Fourier ajustada encima (naranja)</p>
           </div>
           <div class="legend-pills">
-            <span class="pill pill-data"><i class="dot dot-data"></i> Datos $x(t)$</span>
+            <span class="pill pill-data"><i class="dot dot-data"></i> Posición $x(t)$</span>
             <span class="pill pill-fit"><i class="dot dot-fit"></i> Serie de Fourier</span>
           </div>
         </div>
         <div id="timePlot" class="plot-container"></div>
+      </div>
+
+      <!-- Gráfica de Aceleración Original Leída a(t) y Velocidad v(t) -->
+      <div class="card chart-card" id="rawAccelCard">
+        <div class="card-header-flex">
+          <div>
+            <h2 class="card-title">Datos Originales de Aceleración $a(t)$ y Velocidad Integrada $v(t)$</h2>
+            <p class="chart-subtitle">Señal cruda leída del archivo `.txt` de Arduino (morado) y velocidad intermedia $v(t)$ (verde)</p>
+          </div>
+        </div>
+        <div id="accelPlot" class="plot-container plot-accel"></div>
       </div>
 
       <!-- Gráfica de Espectro de Amplitudes vs Frecuencia / n -->
@@ -232,7 +259,7 @@
         <div class="card-header-flex">
           <div>
             <h2 class="card-title">Espectro de Amplitudes de Fourier $C_n = \sqrt{a_n^2 + b_n^2}$</h2>
-            <p class="chart-subtitle">Identificación del pico de mayor amplitud y los armónicos $n$ seleccionados para el ajuste</p>
+            <p class="chart-subtitle">Identificación de la frecuencia para la mayor amplitud de la oscilación y los armónicos $n$ utilizados</p>
           </div>
         </div>
         <div id="spectrumPlot" class="plot-container plot-spectrum"></div>
@@ -241,19 +268,19 @@
       <!-- Expresión Analítica y Los "n" Utilizados -->
       <div class="card">
         <div class="card-header-flex">
-          <h2 class="card-title">Armónicos ($n$) Utilizados y Ecuación de la Serie</h2>
+          <h2 class="card-title">Armónicos ($n$) Utilizados y Ecuación de la Serie para $x(t)$</h2>
           <button id="btnCopyEquation" class="btn btn-sm btn-outline">Copiar ecuación LaTeX</button>
         </div>
 
         <div class="used-n-container">
-          <span class="used-n-label">Valores de $n$ utilizados en el mejor ajuste:</span>
+          <span class="used-n-label">Valores de $n$ utilizados en el mejor ajuste de la serie:</span>
           <div id="usedNBages" class="n-badges-wrap">
             <span class="empty-msg">Carga un archivo para ver los armónicos seleccionados.</span>
           </div>
         </div>
 
         <div class="equation-display-box">
-          <span class="eq-title">Serie explícita reconstruida ($t$ en segundos):</span>
+          <span class="eq-title">Serie de Fourier explícita reconstruida ($t$ en segundos):</span>
           <div id="explicitEquation" class="explicit-equation">
             —
           </div>
@@ -264,9 +291,9 @@
       <div class="card">
         <div class="card-header-flex">
           <div>
-            <h2 class="card-title">Tabla de Coeficientes de Fourier</h2>
+            <h2 class="card-title">Tabla de Coeficientes de Fourier de $x(t)$</h2>
             <p class="chart-subtitle">
-              Coeficientes para cada armónico $n$: $a_n$ (coseno), $b_n$ (seno), amplitud $C_n = \sqrt{a_n^2 + b_n^2}$ y fase $\varphi_n$
+              Coeficientes para cada armónico $n$: $a_n$ ($\cos$), $b_n$ ($\sin$), amplitud $C_n = \sqrt{a_n^2 + b_n^2}$ y fase $\varphi_n$
             </p>
           </div>
           <div class="table-actions">
@@ -274,7 +301,7 @@
               <input type="checkbox" id="showAllHarmonicsCheck" />
               <span>Mostrar todos los $n$ analizados</span>
             </label>
-            <button id="btnExportCSV" class="btn btn-sm btn-secondary">Exportar Coeficientes (.csv)</button>
+            <button id="btnExportCSV" class="btn btn-sm btn-secondary">Exportar Coeficientes y Posición (.csv)</button>
           </div>
         </div>
 
