@@ -713,6 +713,105 @@ function renderUI() {
   renderPlots(res);
 }
 
+/* ==========================================================================
+   ZOOM INTERACTIVO PARA LAS GRÁFICAS
+   ========================================================================== */
+
+const plotZoomState = {};
+
+function getPlotAxisRanges(plotId) {
+  const gd = document.getElementById(plotId);
+  if (!gd) return null;
+  const layout = gd._fullLayout || gd.layout;
+  if (!layout || !layout.xaxis || !layout.yaxis) return null;
+  const ranges = {
+    x: [layout.xaxis.range[0], layout.xaxis.range[1]],
+    y: [layout.yaxis.range[0], layout.yaxis.range[1]]
+  };
+  if (layout.yaxis2) {
+    ranges.y2 = [layout.yaxis2.range[0], layout.yaxis2.range[1]];
+  }
+  return ranges;
+}
+
+function zoomPlot(plotId, factor) {
+  const gd = document.getElementById(plotId);
+  if (!gd) return;
+  const ranges = getPlotAxisRanges(plotId);
+  if (!ranges || isNaN(ranges.x[0]) || isNaN(ranges.x[1])) return;
+
+  const x0 = ranges.x[0], x1 = ranges.x[1];
+  const xMid = (x0 + x1) / 2;
+  const xSpan = (x1 - x0) * factor;
+  const newRangeX = [xMid - xSpan / 2, xMid + xSpan / 2];
+
+  const updateObj = {
+    'xaxis.range': newRangeX,
+    'xaxis.autorange': false
+  };
+
+  if (!isNaN(ranges.y[0]) && !isNaN(ranges.y[1])) {
+    const y0 = ranges.y[0], y1 = ranges.y[1];
+    const yMid = (y0 + y1) / 2;
+    const ySpan = (y1 - y0) * factor;
+    updateObj['yaxis.range'] = [yMid - ySpan / 2, yMid + ySpan / 2];
+    updateObj['yaxis.autorange'] = false;
+  }
+
+  if (ranges.y2 && !isNaN(ranges.y2[0]) && !isNaN(ranges.y2[1])) {
+    const y20 = ranges.y2[0], y21 = ranges.y2[1];
+    const y2Mid = (y20 + y21) / 2;
+    const y2Span = (y21 - y20) * factor;
+    updateObj['yaxis2.range'] = [y2Mid - y2Span / 2, y2Mid + y2Span / 2];
+    updateObj['yaxis2.autorange'] = false;
+  }
+
+  plotZoomState[plotId] = plotZoomState[plotId] || {};
+  Object.assign(plotZoomState[plotId], updateObj);
+
+  Plotly.relayout(plotId, updateObj);
+}
+
+function resetPlotZoom(plotId) {
+  delete plotZoomState[plotId];
+  const updateObj = {
+    'xaxis.autorange': true,
+    'yaxis.autorange': true
+  };
+  const gd = document.getElementById(plotId);
+  if (gd && (gd._fullLayout || gd.layout)?.yaxis2) {
+    updateObj['yaxis2.autorange'] = true;
+  }
+  Plotly.relayout(plotId, updateObj);
+}
+
+function attachZoomListener(plotId) {
+  const gd = document.getElementById(plotId);
+  if (!gd || gd._hasZoomListener) return;
+  gd._hasZoomListener = true;
+  gd.on('plotly_relayout', function(eventData) {
+    if (!eventData) return;
+    if (eventData['xaxis.range[0]'] !== undefined && eventData['xaxis.range[1]'] !== undefined) {
+      plotZoomState[plotId] = plotZoomState[plotId] || {};
+      plotZoomState[plotId]['xaxis.range'] = [eventData['xaxis.range[0]'], eventData['xaxis.range[1]']];
+      plotZoomState[plotId]['xaxis.autorange'] = false;
+      if (eventData['yaxis.range[0]'] !== undefined && eventData['yaxis.range[1]'] !== undefined) {
+        plotZoomState[plotId]['yaxis.range'] = [eventData['yaxis.range[0]'], eventData['yaxis.range[1]']];
+        plotZoomState[plotId]['yaxis.autorange'] = false;
+      }
+      if (eventData['yaxis2.range[0]'] !== undefined && eventData['yaxis2.range[1]'] !== undefined) {
+        plotZoomState[plotId]['yaxis2.range'] = [eventData['yaxis2.range[0]'], eventData['yaxis2.range[1]']];
+        plotZoomState[plotId]['yaxis2.autorange'] = false;
+      }
+    } else if (eventData['xaxis.autorange'] === true) {
+      delete plotZoomState[plotId];
+    }
+  });
+}
+
+window.zoomPlot = zoomPlot;
+window.resetPlotZoom = resetPlotZoom;
+
 function renderPlots(res) {
   const dom = res.bestHarmonic;
 
@@ -754,10 +853,20 @@ function renderPlots(res) {
     hovermode: 'x unified'
   };
 
+  if (plotZoomState['timePlot']) {
+    layoutTime.xaxis.range = plotZoomState['timePlot']['xaxis.range'];
+    layoutTime.xaxis.autorange = false;
+    if (plotZoomState['timePlot']['yaxis.range']) {
+      layoutTime.yaxis.range = plotZoomState['timePlot']['yaxis.range'];
+      layoutTime.yaxis.autorange = false;
+    }
+  }
+
   Plotly.react('timePlot', [tracePos, traceFourier], layoutTime, {
     responsive: true,
     displaylogo: false
   });
+  attachZoomListener('timePlot');
 
   // --- GRÁFICA 2: Aceleración original a(t) y Velocidad integrada v(t) ---
   if (state.signalType === 'acceleration') {
@@ -805,10 +914,24 @@ function renderPlots(res) {
       hovermode: 'x unified'
     };
 
+    if (plotZoomState['accelPlot']) {
+      layoutAccel.xaxis.range = plotZoomState['accelPlot']['xaxis.range'];
+      layoutAccel.xaxis.autorange = false;
+      if (plotZoomState['accelPlot']['yaxis.range']) {
+        layoutAccel.yaxis.range = plotZoomState['accelPlot']['yaxis.range'];
+        layoutAccel.yaxis.autorange = false;
+      }
+      if (plotZoomState['accelPlot']['yaxis2.range']) {
+        layoutAccel.yaxis2.range = plotZoomState['accelPlot']['yaxis2.range'];
+        layoutAccel.yaxis2.autorange = false;
+      }
+    }
+
     Plotly.react('accelPlot', [traceAccel, traceVel], layoutAccel, {
       responsive: true,
       displaylogo: false
     });
+    attachZoomListener('accelPlot');
   }
 
   // --- GRÁFICA 3: Espectro de Amplitudes C_n vs Frecuencia f_n ---
@@ -866,10 +989,20 @@ function renderPlots(res) {
     ]
   };
 
+  if (plotZoomState['spectrumPlot']) {
+    layoutSpectrum.xaxis.range = plotZoomState['spectrumPlot']['xaxis.range'];
+    layoutSpectrum.xaxis.autorange = false;
+    if (plotZoomState['spectrumPlot']['yaxis.range']) {
+      layoutSpectrum.yaxis.range = plotZoomState['spectrumPlot']['yaxis.range'];
+      layoutSpectrum.yaxis.autorange = false;
+    }
+  }
+
   Plotly.react('spectrumPlot', [traceSpectrum], layoutSpectrum, {
     responsive: true,
     displaylogo: false
   });
+  attachZoomListener('spectrumPlot');
 }
 
 /* ==========================================================================
@@ -1155,6 +1288,11 @@ function loadTextData(content, fileName) {
   state.rawVal = rawVal;
   state.fileName = fileName;
   els.fileNameDisplay.textContent = `${fileName} (${rawT.length} muestras válidas)`;
+
+  // Restablecer zoom al cargar un nuevo archivo
+  for (const k of Object.keys(plotZoomState)) {
+    delete plotZoomState[k];
+  }
 
   if (preprocessAndComputePosition()) {
     computeFourierAnalysis();

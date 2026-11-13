@@ -140,7 +140,7 @@ body {
 /* Layout Grid */
 .main-grid {
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
   gap: 1.25rem;
   padding-top: 1.25rem;
   padding-bottom: 2.5rem;
@@ -149,7 +149,7 @@ body {
 
 @media (max-width: 1080px) {
   .main-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -157,6 +157,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.15rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* Cards */
@@ -166,6 +168,9 @@ body {
   border-radius: var(--radius-lg);
   padding: 1.2rem;
   box-shadow: var(--shadow-card);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .card-title {
@@ -245,12 +250,16 @@ body {
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .form-group label,
@@ -261,6 +270,14 @@ body {
 }
 
 .input-select {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
   background: var(--bg-secondary);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
@@ -337,6 +354,8 @@ body {
   border-radius: 8px;
   padding: 0.75rem;
   margin-bottom: 0.8rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .hidden {
@@ -370,6 +389,8 @@ body {
   gap: 0.4rem;
   padding-top: 0.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .badge {
@@ -529,6 +550,74 @@ body {
 .legend-pills {
   display: flex;
   gap: 0.6rem;
+  align-items: center;
+}
+
+/* Zoom Controls for Charts */
+.chart-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.zoom-btn-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(11, 15, 25, 0.75);
+  padding: 0.22rem 0.45rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.zoom-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-right: 0.15rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+
+.btn-zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 0.28rem 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  user-select: none;
+  line-height: 1;
+}
+
+.btn-zoom:hover {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: var(--accent-blue);
+  transform: translateY(-1px);
+}
+
+.btn-zoom:active {
+  transform: scale(0.96);
+}
+
+.btn-zoom svg {
+  flex-shrink: 0;
+}
+
+@media (max-width: 520px) {
+  .btn-zoom .zoom-text {
+    display: none;
+  }
 }
 
 .pill {
