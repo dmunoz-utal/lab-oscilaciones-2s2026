@@ -13,6 +13,7 @@
   <!-- KaTeX for math formulas -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onload="if (window.renderMathInElement) renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false});"></script>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -206,24 +207,24 @@
     <section class="panel results-panel">
       <!-- Barra de Resumen de Ajuste -->
       <div class="stats-bar">
-        <div class="stat-item">
-          <span class="stat-label">Muestras leídas ($M$)</span>
+        <div class="stat-item" title="Número total de puntos o muestras leídas del archivo">
+          <span class="stat-label">Muestras ($M$)</span>
           <span id="statPoints" class="stat-val">—</span>
         </div>
-        <div class="stat-item">
-          <span class="stat-label">Frecuencia muestreo ($f_s$)</span>
+        <div class="stat-item" title="Frecuencia de muestreo del sensor">
+          <span class="stat-label">Muestreo ($f_s$)</span>
           <span id="statFs" class="stat-val">—</span>
         </div>
-        <div class="stat-item">
-          <span class="stat-label">Aceleración Media ($\bar{a}$)</span>
+        <div class="stat-item" title="Valor medio / componente constante de la aceleración">
+          <span class="stat-label">Acel. Media ($\bar{a}$)</span>
           <span id="statMeanAccel" class="stat-val">—</span>
         </div>
-        <div class="stat-item">
-          <span class="stat-label">Bondad de ajuste ($R^2$)</span>
+        <div class="stat-item" title="Coeficiente de determinación o bondad de ajuste del modelo">
+          <span class="stat-label">Ajuste ($R^2$)</span>
           <span id="statR2" class="stat-val accent-text">—</span>
         </div>
-        <div class="stat-item">
-          <span class="stat-label">Armónicos usados</span>
+        <div class="stat-item" title="Cantidad de armónicos n seleccionados para la serie">
+          <span class="stat-label">Armónicos ($n$)</span>
           <span id="statUsedCount" class="stat-val">—</span>
         </div>
       </div>
