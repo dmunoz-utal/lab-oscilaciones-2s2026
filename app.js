@@ -24,7 +24,6 @@ const state = {
   f0Mode: 'window',                 // 'window' | 'fundamental'
   timeUnit: 'auto',
   showAllHarmonics: false,
-  normalizePosition: true,          // Normalizar curva de posición a rango [-1, 1]
   analysis: null
 };
 
@@ -34,7 +33,6 @@ const els = {
   fileInput: document.getElementById('fileInput'),
   fileNameDisplay: document.getElementById('fileNameDisplay'),
   timePlotSubtitle: document.getElementById('timePlotSubtitle'),
-  normalizePosCheck: document.getElementById('normalizePosCheck'),
   inputSignalTypeSelect: document.getElementById('inputSignalTypeSelect'),
   integrationMethodGroup: document.getElementById('integrationMethodGroup'),
   integrationMethodSelect: document.getElementById('integrationMethodSelect'),
@@ -819,37 +817,28 @@ function renderPlots(res) {
   const dom = res.bestHarmonic;
 
   // --- GRÁFICA 1: Posición calculada x(t) y Serie de Fourier encima en otro color ---
-  const isNorm = !!state.normalizePosition;
-  const xPeak = (state.x && state.x.length > 0) ? Math.max(...state.x.map(Math.abs)) : 1;
-  const safePeak = xPeak > 1e-12 ? xPeak : 1;
-
-  const yPos = isNorm ? state.x.map(v => v / safePeak) : state.x;
-  const yFourier = isNorm ? res.xFitDense.map(v => v / safePeak) : res.xFitDense;
-
   if (els.timePlotSubtitle) {
-    els.timePlotSubtitle.textContent = isNorm
-      ? `Posición normalizada x(t)/X_máx (escala [-1, 1], con |X_máx| = ${formatNum(safePeak, 4)}) y Serie de Fourier ajustada (naranja)`
-      : `Posición x(t) obtenida a partir de la aceleración (azul) y Serie de Fourier ajustada encima (naranja)`;
+    els.timePlotSubtitle.textContent = 'Posición x(t) obtenida a partir de la aceleración (azul) y Serie de Fourier ajustada encima (naranja)';
   }
 
   const tracePos = {
     x: state.t,
-    y: yPos,
-    mode: 'lines+markers',
-    name: isNorm ? 'Posición normalizada x(t)' : 'Posición calculada x(t)',
-    line: { color: '#38bdf8', width: 1.8 },
-    marker: { color: '#38bdf8', size: 4.5, opacity: 0.8 },
-    hovertemplate: `Tiempo: %{x:.3f} s<br>${isNorm ? 'x_norm(t)' : 'x(t)'}: %{y:.4f}<extra></extra>`
+    y: state.x,
+    mode: state.t.length > 250 ? 'lines' : 'lines+markers',
+    name: 'Posición calculada x(t)',
+    line: { color: '#38bdf8', width: 1.1 },
+    marker: { color: '#38bdf8', size: 2.5, opacity: 0.65 },
+    hovertemplate: 'Tiempo: %{x:.3f} s<br>x(t): %{y:.4f}<extra></extra>'
   };
 
   const nListStr = res.selectedList.map(h => h.n).join(', ');
   const traceFourier = {
     x: res.tDense,
-    y: yFourier,
+    y: res.xFitDense,
     mode: 'lines',
-    name: isNorm ? `Fourier normalizada (n = ${nListStr})` : `Serie de Fourier ajustada (n = ${nListStr})`,
-    line: { color: '#f97316', width: 3.2 },
-    hovertemplate: `Tiempo: %{x:.3f} s<br>${isNorm ? 'x_Fourier_norm(t)' : 'x_Fourier(t)'}: %{y:.4f}<extra></extra>`
+    name: `Serie de Fourier ajustada (n = ${nListStr})`,
+    line: { color: '#f97316', width: 1.3 },
+    hovertemplate: 'Tiempo: %{x:.3f} s<br>x_Fourier(t): %{y:.4f}<extra></extra>'
   };
 
   const layoutTime = {
@@ -863,7 +852,7 @@ function renderPlots(res) {
       zerolinecolor: '#334155'
     },
     yaxis: {
-      title: isNorm ? 'Posición normalizada x(t) / X_máx' : 'Posición x(t)',
+      title: 'Posición x(t)',
       gridcolor: '#1e293b',
       zerolinecolor: '#334155'
     },
@@ -891,10 +880,10 @@ function renderPlots(res) {
     const traceAccel = {
       x: state.t,
       y: state.accel,
-      mode: 'lines+markers',
+      mode: state.t.length > 250 ? 'lines' : 'lines+markers',
       name: 'Aceleración leída a(t)',
-      line: { color: '#a855f7', width: 1.5 },
-      marker: { color: '#a855f7', size: 3.5 }
+      line: { color: '#a855f7', width: 1.1 },
+      marker: { color: '#a855f7', size: 2.5 }
     };
 
     const traceVel = {
@@ -903,7 +892,7 @@ function renderPlots(res) {
       mode: 'lines',
       name: 'Velocidad integrada v(t)',
       yaxis: 'y2',
-      line: { color: '#10b981', width: 1.8, dash: 'dot' }
+      line: { color: '#10b981', width: 1.1, dash: 'dot' }
     };
 
     const layoutAccel = {
@@ -1437,18 +1426,6 @@ function initEvents() {
     state.showAllHarmonics = e.target.checked;
     renderUI();
   });
-
-  // Toggle de curva normalizada [-1, 1]
-  if (els.normalizePosCheck) {
-    els.normalizePosCheck.checked = state.normalizePosition;
-    els.normalizePosCheck.addEventListener('change', e => {
-      state.normalizePosition = e.target.checked;
-      delete plotZoomState['timePlot'];
-      if (state.analysis) {
-        renderPlots(state.analysis);
-      }
-    });
-  }
 
   // Botones de datos de ejemplo (datos reales de CoolTerm)
   els.btnSampleResonance.addEventListener('click', () => {
